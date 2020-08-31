@@ -1,0 +1,209 @@
+---
+title: "HW2-Problem 4"
+author: "Azat Dovgeldiyev"
+date: "8/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#Libraries
+```{r}
+library(Hmisc) #Describe Function
+library(psych) #Multiple Functions for Statistics and Multivariate Analysis
+library(GGally) #ggpairs Function
+library(ggplot2) #ggplot2 Functions
+library(vioplot) #Violin Plot Function
+library(corrplot) #Plot Correlations
+library(REdaS) #Bartlett's Test of Sphericity
+library(psych) #PCA/FA functions
+library(factoextra) #PCA Visualizations
+library("FactoMineR") #PCA functions
+library(ade4) #PCA Visualizations
+```
+
+
+## Read dataset
+```{r}
+big_five <- read.csv(file = 'BIG5.csv', header = TRUE, sep = ",")
+head(big_five)
+```
+```{r}
+dim(big_five)
+names(big_five)
+```
+#check for missing
+```{r}
+sum(is.na(big_five))
+```
+show structure of dataset
+```{r}
+str(big_five, list.len=ncol(big_five))
+```
+```{r}
+MCorr = corr.test(big_five, adjust = "none")
+M = MCorr$p
+MTest = ifelse(M < .01, T, F)
+colSums(MTest) - 1
+```
+```{r}
+PCA_Plot = function(pcaData)
+{
+  library(ggplot2)
+  
+  theta = seq(0,2*pi,length.out = 100)
+  circle = data.frame(x = cos(theta), y = sin(theta))
+  p = ggplot(circle,aes(x,y)) + geom_path()
+  
+  loadings = data.frame(pcaData$rotation, .names = row.names(pcaData$rotation))
+  p + geom_text(data=loadings, mapping=aes(x = PC1, y = PC2, label = .names, colour = .names, fontface="bold")) +
+    coord_fixed(ratio=1) + labs(x = "PC1", y = "PC2")
+}
+
+PCA_Plot_Secondary = function(pcaData)
+{
+  library(ggplot2)
+  
+  theta = seq(0,2*pi,length.out = 100)
+  circle = data.frame(x = cos(theta), y = sin(theta))
+  p = ggplot(circle,aes(x,y)) + geom_path()
+  
+  loadings = data.frame(pcaData$rotation, .names = row.names(pcaData$rotation))
+  p + geom_text(data=loadings, mapping=aes(x = PC3, y = PC4, label = .names, colour = .names, fontface="bold")) +
+    coord_fixed(ratio=1) + labs(x = "PC3", y = "PC4")
+}
+
+PCA_Plot_Psyc = function(pcaData)
+{
+  library(ggplot2)
+  
+  theta = seq(0,2*pi,length.out = 100)
+  circle = data.frame(x = cos(theta), y = sin(theta))
+  p = ggplot(circle,aes(x,y)) + geom_path()
+  
+  loadings = as.data.frame(unclass(pcaData$loadings))
+  s = rep(0, ncol(loadings))
+  for (i in 1:ncol(loadings))
+  {
+    s[i] = 0
+    for (j in 1:nrow(loadings))
+      s[i] = s[i] + loadings[j, i]^2
+    s[i] = sqrt(s[i])
+  }
+  
+  for (i in 1:ncol(loadings))
+    loadings[, i] = loadings[, i] / s[i]
+  
+  loadings$.names = row.names(loadings)
+  
+  p + geom_text(data=loadings, mapping=aes(x = PC1, y = PC2, label = .names, colour = .names, fontface="bold")) +
+    coord_fixed(ratio=1) + labs(x = "PC1", y = "PC2")
+}
+
+PCA_Plot_Psyc_Secondary = function(pcaData)
+{
+  library(ggplot2)
+  
+  theta = seq(0,2*pi,length.out = 100)
+  circle = data.frame(x = cos(theta), y = sin(theta))
+  p = ggplot(circle,aes(x,y)) + geom_path()
+  
+  loadings = as.data.frame(unclass(pcaData$loadings))
+  s = rep(0, ncol(loadings))
+  for (i in 1:ncol(loadings))
+  {
+    s[i] = 0
+    for (j in 1:nrow(loadings))
+      s[i] = s[i] + loadings[j, i]^2
+    s[i] = sqrt(s[i])
+  }
+  
+  for (i in 1:ncol(loadings))
+    loadings[, i] = loadings[, i] / s[i]
+  
+  loadings$.names = row.names(loadings)
+  
+  print(loadings)
+  p + geom_text(data=loadings, mapping=aes(x = PC3, y = PC4, label = .names, colour = .names, fontface="bold")) +
+    coord_fixed(ratio=1) + labs(x = "PC3", y = "PC4")
+}
+```
+
+```{r}
+KMO(big_five)
+```
+```{r}
+bart_spher(big_five)
+```
+```{r}
+alpha(big_five, check.keys = TRUE)
+```
+
+```{r}
+comp <- fa.parallel(big_five)
+comp
+```
+```{r}
+p <- prcomp( big_five, center = T, scale=T)
+plot(p)
+abline(1,0)
+```
+```{r}
+p2 = psych::principal(big_five, rotate="varimax", nfactors=8, scores=TRUE)
+p2
+print(p2$loadings, cutoff=.4, sort=T)
+```
+```{r}
+p2$values
+p2$communality
+p2$rot.mat
+table(p2$values>1)
+```
+```{r}
+scores <- p2$scores
+scores_1 <- scores[,1]
+
+min_score <- min(scores_1)
+min_score
+
+max_score <- max(scores_1)
+max_score
+
+scores_2 <- scores[,2]
+scores_3 <- scores[,3]
+scores_4 <- scores[,4]
+scores_5 <- scores[,5]
+scores_6 <- scores[,6]
+```
+
+```{r}
+p4 <- PCA(big_five, graph = FALSE)
+#IF graph is set to true, it will provide the individual and variable maps
+
+#Shows all the objects or functions available in PCA
+print(p4)
+
+#Options for providing screeplot
+fviz_eig(p4, addlabels = TRUE, ylim = c(0, 35))
+fviz_screeplot(p4, addlabels = TRUE, ylim = c(0, 35))
+
+variables <- get_pca_var(p4)
+```
+
+```{r}
+corrplot(variables$contrib, is.corr=FALSE)    
+
+# Contributions of variables to PC1
+fviz_contrib(p4, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+fviz_contrib(p4, choice = "var", axes = 2, top = 10)
+```
+```{r}
+fit = factanal(big_five, 8)
+print(fit$loadings, cutoff=.4, sort=T)
+summary(fit)
+```
+
+
+
